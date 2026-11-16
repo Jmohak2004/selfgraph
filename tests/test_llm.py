@@ -1,4 +1,5 @@
 import asyncio
+import errno
 import re
 
 import pytest
@@ -168,10 +169,29 @@ def test_a_tiktoken_that_cannot_load_its_encoding_warns_once_and_falls_back(monk
     assert "Failed to resolve 'openaipublic.blob.core.windows.net'" in warnings[0]
 
 
+@pytest.mark.parametrize(
+    ("code", "phrase"),
+    [
+        (errno.ECONNREFUSED, "connection refused"),
+        (errno.ECONNRESET, "connection reset"),
+        (errno.EHOSTUNREACH, "host unreachable"),
+        (errno.ETIMEDOUT, "connection timed out"),
+    ],
+)
+def test_error_reasons_name_connection_failures_by_this_platforms_errno(code, phrase):
+    try:
+        try:
+            raise OSError(code, "socket error")
+        except OSError as inner:
+            raise RuntimeError("Cannot connect to API: ") from inner
+    except RuntimeError as exc:
+        assert error_reason(exc) == f"Cannot connect to API: {phrase}"
+
+
 def test_error_reasons_fill_empty_messages_and_strip_driver_boilerplate():
     try:
         try:
-            raise ConnectionRefusedError(111, "Connection refused")
+            raise ConnectionRefusedError(errno.ECONNREFUSED, "Connection refused")
         except OSError as inner:
             raise RuntimeError("Cannot connect to API: ") from inner
     except RuntimeError as exc:

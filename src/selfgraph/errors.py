@@ -86,10 +86,10 @@ _SURFACE_HINTS = (
 )
 
 _CONNECT_CODES = {
-    "ECONNREFUSED": "connection refused",
-    "ECONNRESET": "connection reset",
-    "EHOSTUNREACH": "host unreachable",
-    "ETIMEDOUT": "connection timed out",
+    errno.ECONNREFUSED: "connection refused",
+    errno.ECONNRESET: "connection reset",
+    errno.EHOSTUNREACH: "host unreachable",
+    errno.ETIMEDOUT: "connection timed out",
 }
 _DANGLING = re.compile(r":[\s.]*$")
 _DRIVER_BOILERPLATE = re.compile(
@@ -120,7 +120,7 @@ def _connect_failure(exc: BaseException | None, seen: set[int]) -> str:
     if exc is None or id(exc) in seen:
         return ""
     seen.add(id(exc))
-    phrase = _CONNECT_CODES.get(errno.errorcode.get(getattr(exc, "errno", None) or 0, ""))
+    phrase = _CONNECT_CODES.get(getattr(exc, "errno", None))
     return phrase or _connect_failure(exc.__cause__ or exc.__context__, seen)
 
 
